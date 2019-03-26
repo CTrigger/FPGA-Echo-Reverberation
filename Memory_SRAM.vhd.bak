@@ -1,0 +1,78 @@
+-- projeto_base -> memory_SRAM
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use ieee.std_logic_arith.all;
+use ieee.Std_Logic_Unsigned.all;
+
+entity SRAM is
+	port(
+		--memory
+		sram_addr	:	out 	std_logic_vector (17 downto 0);
+		sram_dq		:	inout std_logic_vector (15 downto 0);
+		sram_we_n	:	out	bit;
+		sram_oe_n	:	out	bit;
+		sram_ub_n	:	out 	bit;
+		sram_lb_n	:	out	bit;
+		sram_ce_n	:	out	bit;
+		
+		--interface
+		key	:	in			bit_vector (0 to 3);
+		hex3	:	out		bit_vector (0 to 6);
+		hex2	:	out		bit_vector (0 to 6);
+		hex1	:	out		bit_vector (0 to 6);
+		hex0	:	out		bit_vector (0 to 6)
+	);
+end SRAM;
+
+architecture Memory_SRAM of SRAM is
+	-- memory addressing
+	signal	addressing17Bits	:	std_logic_vector	(17 downto 0) := "000000000000000000";
+	constant	oneBit				:	std_logic_vector	(17 downto 0) := "000000000000000001";
+	constant	addressingStart	:	std_logic_vector	(17 downto 0) := "000000000000000000";
+	-- memory data
+	constant ioLocker				:	std_logic_vector	(15 downto 0) := "ZZZZZZZZZZZZZZZZ";
+	-- memory controller
+	signal	writeEnable			:	bit := '1';
+	signal	readEnable			:	bit := '1';
+	
+	-- translation from bit to decimal HEX
+	type decimal is array (0 to 15) of bit_vector (0 to 6);
+	constant b2h : decimal := (
+		0 =>  "0000001",
+		1 =>  "1001111",
+		2 =>  "0010010",
+		3 =>  "0000110",
+		4 =>  "1001100",		
+		5 =>  "0100100",		
+		6 =>  "0100000",		
+		7 =>  "0001101",
+		8 =>  "0000000",
+		9 =>  "0000100",
+		10=>  "0001000",
+		11=>  "1100000",
+		12=>  "0110001",
+		13=>  "1000010",
+		14=>  "0110000",
+		15=>  "0111000"
+	);
+	begin
+		-- display the address
+		hex3 <= b2h(to_integer(ieee.numeric_std.unsigned(addressing17Bits(15 downto 12))));
+		hex2 <= b2h(to_integer(ieee.numeric_std.unsigned(addressing17Bits(11 downto  8))));
+		hex1 <= b2h(to_integer(ieee.numeric_std.unsigned(addressing17Bits( 7 downto  4))));
+		hex0 <= b2h(to_integer(ieee.numeric_std.unsigned(addressing17Bits( 3 downto  0))));
+		sram_addr <= addressing17Bits;
+		
+		button:process (key(3))
+			begin
+				if falling_edge(to_stdulogic(key(3))) then
+					if key(2) = '1' then
+						addressing17Bits <= addressing17Bits + oneBit;
+					else
+						addressing17Bits <= addressingStart;
+					end if;
+				end if;
+				
+		end process;
+end Memory_SRAM;
